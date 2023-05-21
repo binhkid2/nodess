@@ -4,6 +4,8 @@ const process = require('process');
 const {authenticate} = require('@google-cloud/local-auth');
 const {google} = require('googleapis');
 const express = require('express');
+require('dotenv').config();
+const PORT = 3000 || process.env.PORT;
 const app = express();
 // If modifying these scopes, delete token.json.
 const SCOPES = ['https://www.googleapis.com/auth/drive.file',
@@ -163,6 +165,6 @@ app.get('/products/category/:id', (req, res) => {
 
 
 // Start the server
-app.listen(3000, () => {
-  console.log('Server is running on http://localhost:3000');
+app.listen(PORT, () => {
+  console.log('Server is running on PORT');
 });

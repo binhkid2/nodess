@@ -4,9 +4,17 @@ const process = require('process');
 const {authenticate} = require('@google-cloud/local-auth');
 const {google} = require('googleapis');
 const express = require('express');
-require('dotenv').config();
-const PORT = 3000 || process.env.PORT;
 const app = express();
+const PORT = 3000 || process.env.PORT;
+ 
+// For parsing application/json
+app.use(express.json());
+ 
+// For parsing application/x-www-form-urlencoded
+app.use(express.urlencoded({ extended: true }));
+require('dotenv').config();
+
+
 // If modifying these scopes, delete token.json.
 const SCOPES = ['https://www.googleapis.com/auth/drive.file',
 'https://www.googleapis.com/auth/spreadsheets'
@@ -31,6 +39,7 @@ async function loadSavedCredentialsIfExist() {
     return null;
   }
 }
+
 
 /**
  * Serializes credentials to a file comptible with GoogleAUth.fromJSON.
@@ -70,6 +79,7 @@ async function authorize() {
   return client;
 }
 
+
 /**
  * Prints the names and majors of students in a sample spreadsheet:
  * @see https://docs.google.com/spreadsheets/d/1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgvE2upms/edit
@@ -108,6 +118,29 @@ jsonData.forEach((obj) => {
 return jsonData
 }
 
+/**
+ * Prints the names and majors of students in a sample spreadsheet:
+ * @see https://docs.google.com/spreadsheets/d/1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgvE2upms/edit
+ * @param {google.auth.OAuth2} auth The authenticated Google OAuth client.
+ * @param {Object} req The Express request object.
+ */
+async function postRaw(auth, data,rangex) {
+  const sheets = google.sheets({ version: 'v4', auth });
+  const response = await sheets.spreadsheets.values.append({
+    spreadsheetId: '1cQMyFONdsn1rTtW-wV79HjETbyiiNrAcv6dqnY8lf08',
+    range: rangex, // The range where you want to append the new row
+    valueInputOption: 'USER_ENTERED',
+    resource: {
+      values: [data],
+    },
+  });
+
+  console.log("Added row function work!" );
+}
+
+
+
+
 // Route to handle the homepage
 app.get('/products', (req, res) => {
   authorize()
@@ -120,6 +153,53 @@ app.get('/products', (req, res) => {
       res.status(500).send('Internal Server Error');
     });
 });
+// Route to handle writing order data
+app.post('/products',(req, res) => {
+  const rangex = "Products"
+  console.log(req.body)
+  const id = req.body.id;
+  const title = req.body.title;
+  const categoryVN = req.body.categoryVN;
+  const price = req.body.price;
+  const summary = req.body.summary;
+  const description = req.body.description;
+  const images = req.body.images;
+  const data = [id, title, categoryVN, price, summary, description, images];
+  authorize()
+    .then((auth) => postRaw(auth,data,rangex)) // Pass req as an argument
+    .then(() => res.status(200).send('Add row to Products success'))
+    .catch((error) => {
+      console.error(error);
+      res.status(500).send('Error occurred');
+    });
+});
+
+app.post('/orders',(req, res) => {
+  const rangex = "Orders"
+  console.log(req.body)
+  const orderNo = req.body.orderNo;
+  const date = req.body.date;
+  const orderTotal = req.body.orderTotal;
+  const name = req.body.name;
+  const email = req.body.email;
+  const phone = req.body.phone;
+  const address = req.body.address;
+  const payment = req.body.payment;
+  const shippingMethod = req.body.shippingMethod;
+  const transactionId = req.body.transactionId;
+  const products = req.body.products;
+  const data = [orderNo, date, orderTotal, name, email, phone, address, payment, shippingMethod, transactionId, products];
+  authorize()
+    .then((auth) => postRaw(auth,data,rangex)) // Pass req as an argument
+    .then(() => res.status(200).send('Add row to Orders success'),
+    console.log("added row to orders success")
+    )
+    .catch((error) => {
+      console.error(error);
+      res.status(500).send('Error occurred');
+    });
+});
+
 // Route to handle the product details
 app.get('/products/:id', (req, res) => {
   const id = req.params.id;
@@ -164,7 +244,7 @@ app.get('/products/category/:id', (req, res) => {
 });
 
 
-// Start the server
+// Start the serve
 app.listen(PORT, () => {
-  console.log('Server is running on PORT');
+  console.log('Server is running on PORT/3000');
 });
